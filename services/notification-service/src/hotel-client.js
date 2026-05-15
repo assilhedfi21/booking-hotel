@@ -9,7 +9,8 @@ const path = require("path");
 const grpc = require("@grpc/grpc-js");
 const protoLoader = require("@grpc/proto-loader");
 
-const PROTO_PATH = path.resolve(__dirname, "..", "..", "..", "proto", "hotel.proto");
+const PROTO_DIR = process.env.PROTO_DIR || path.resolve(__dirname, "..", "..", "..", "proto");
+const PROTO_PATH = path.join(PROTO_DIR, "hotel.proto");
 const HOTEL_TARGET = process.env.HOTEL_GRPC_TARGET || "localhost:50051";
 
 const packageDefinition = protoLoader.loadSync(PROTO_PATH, {

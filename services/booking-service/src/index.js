@@ -5,7 +5,8 @@ const protoLoader = require("@grpc/proto-loader");
 const { BookingRepo } = require("./repository");
 const { startKafka, stopKafka, publish, TOPICS } = require("./kafka");
 
-const PROTO_PATH = path.resolve(__dirname, "..", "..", "..", "proto", "booking.proto");
+const PROTO_DIR = process.env.PROTO_DIR || path.resolve(__dirname, "..", "..", "..", "proto");
+const PROTO_PATH = path.join(PROTO_DIR, "booking.proto");
 const PORT = process.env.BOOKING_GRPC_PORT || 50052;
 
 const packageDefinition = protoLoader.loadSync(PROTO_PATH, {

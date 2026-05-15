@@ -6,7 +6,8 @@ const { initDb } = require("./db");
 const { NotificationRepo } = require("./repository");
 const { startKafka, stopKafka } = require("./kafka");
 
-const PROTO_PATH = path.resolve(__dirname, "..", "..", "..", "proto", "notification.proto");
+const PROTO_DIR = process.env.PROTO_DIR || path.resolve(__dirname, "..", "..", "..", "proto");
+const PROTO_PATH = path.join(PROTO_DIR, "notification.proto");
 const PORT = process.env.NOTIFICATION_GRPC_PORT || 50053;
 
 const packageDefinition = protoLoader.loadSync(PROTO_PATH, {

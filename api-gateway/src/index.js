@@ -20,7 +20,8 @@ async function main() {
   app.use(bodyParser.json());
 
   // Static demo client served by the gateway for convenience.
-  app.use(express.static(path.resolve(__dirname, "..", "..", "client", "public")));
+  const clientDir = process.env.CLIENT_DIR || path.resolve(__dirname, "..", "..", "client", "public");
+  app.use(express.static(clientDir));
 
   // REST API
   app.use("/api/hotels", hotelsRoutes);
