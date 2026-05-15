@@ -20,6 +20,16 @@ const packageDefinition = protoLoader.loadSync(PROTO_PATH, {
 const notificationProto = grpc.loadPackageDefinition(packageDefinition).notification;
 
 const handlers = {
+  async CreateNotification(call, callback) {
+    try {
+      const { user_email, type, title, message, related_id } = call.request;
+      const n = await NotificationRepo.create({ user_email, type, title, message, related_id });
+      callback(null, n);
+    } catch (err) {
+      callback({ code: grpc.status.INTERNAL, message: err.message });
+    }
+  },
+
   async ListNotifications(call, callback) {
     try {
       callback(null, await NotificationRepo.list(call.request));

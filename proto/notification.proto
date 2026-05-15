@@ -4,10 +4,21 @@ package notification;
 
 // NotificationService stores notifications generated when
 // Kafka events are received (e.g. booking.created).
+// CreateNotification is also exposed so other services can push
+// notifications directly via gRPC when Kafka is unavailable.
 service NotificationService {
+  rpc CreateNotification (CreateNotificationRequest) returns (Notification);
   rpc ListNotifications (ListNotificationsRequest) returns (ListNotificationsResponse);
   rpc GetNotificationsByUser (GetNotificationsByUserRequest) returns (ListNotificationsResponse);
   rpc MarkAsRead (MarkAsReadRequest) returns (Notification);
+}
+
+message CreateNotificationRequest {
+  string user_email = 1;
+  string type = 2;
+  string title = 3;
+  string message = 4;
+  string related_id = 5;
 }
 
 message Notification {
