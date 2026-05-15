@@ -1,12 +1,12 @@
 const path = require("path");
 const fs = require("fs");
-const Database = require("better-sqlite3");
+const { DatabaseSync } = require("node:sqlite");
 
 const dataDir = path.join(__dirname, "..", "data");
 if (!fs.existsSync(dataDir)) fs.mkdirSync(dataDir, { recursive: true });
 
-const db = new Database(path.join(dataDir, "hotel.db"));
-db.pragma("journal_mode = WAL");
+const db = new DatabaseSync(path.join(dataDir, "hotel.db"));
+db.exec("PRAGMA journal_mode = WAL;");
 
 db.exec(`
   CREATE TABLE IF NOT EXISTS hotels (
@@ -80,15 +80,19 @@ if (count === 0) {
     }
   ];
 
-  const tx = db.transaction(() => {
+  db.exec("BEGIN");
+  try {
     for (const h of seed) {
       insertHotel.run(h.id, h.name, h.city, h.country, h.description, h.stars, now);
       for (const r of h.rooms) {
         insertRoom.run(r.id, h.id, r.number, r.type, r.price, r.capacity);
       }
     }
-  });
-  tx();
+    db.exec("COMMIT");
+  } catch (err) {
+    db.exec("ROLLBACK");
+    throw err;
+  }
 }
 
 module.exports = db;
