@@ -9,7 +9,7 @@ const PROTO_PATH = path.resolve(__dirname, "..", "..", "..", "proto", "hotel.pro
 const PORT = process.env.HOTEL_GRPC_PORT || 50051;
 
 const packageDefinition = protoLoader.loadSync(PROTO_PATH, {
-  keepCase: false,
+  keepCase: true,
   longs: String,
   enums: String,
   defaults: true,

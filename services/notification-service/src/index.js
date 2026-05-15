@@ -10,7 +10,7 @@ const PROTO_PATH = path.resolve(__dirname, "..", "..", "..", "proto", "notificat
 const PORT = process.env.NOTIFICATION_GRPC_PORT || 50053;
 
 const packageDefinition = protoLoader.loadSync(PROTO_PATH, {
-  keepCase: false,
+  keepCase: true,
   longs: String,
   enums: String,
   defaults: true,
