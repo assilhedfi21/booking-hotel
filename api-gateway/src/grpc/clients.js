@@ -6,7 +6,7 @@ const PROTO_DIR = path.resolve(__dirname, "..", "..", "..", "proto");
 
 function loadProto(file) {
   const pkg = protoLoader.loadSync(path.join(PROTO_DIR, file), {
-    keepCase: false,
+    keepCase: true,
     longs: String,
     enums: String,
     defaults: true,
