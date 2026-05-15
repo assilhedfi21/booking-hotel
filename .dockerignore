@@ -1,0 +1,16 @@
+node_modules
+**/node_modules
+**/data
+*.log
+*.db
+*.sqlite
+*.sqlite3
+.git
+.gitignore
+.github
+.vscode
+.idea
+docs
+*.md
+!README.md
+client/node_modules
