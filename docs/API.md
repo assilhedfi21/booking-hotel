@@ -1,5 +1,11 @@
 # API reference
 
+## What's new (v1.2.0)
+
+- **10 Tunisian hotels** are now seeded automatically on first run (Tunis, Hammamet, Sousse, Monastir, Nefta, Carthage, Djerba, Tabarka).
+- **Booking responses are enriched**: every booking now includes `hotel_name`, `hotel_city`, `hotel_stars`, `room_number` and `room_type` resolved by the gateway through gRPC calls to the hotel-service.
+- **Notifications are richer**: when the notification-service receives a `booking.created` or `booking.cancelled` event from Kafka, it fetches the hotel name and room number through gRPC so the message is human-readable (e.g. "Your booking at Four Seasons Tunis (room 401) has been cancelled.").
+
 ## REST examples (curl)
 
 ### List hotels
