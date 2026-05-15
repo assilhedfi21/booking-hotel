@@ -1,5 +1,7 @@
 syntax = "proto3";
 
+// Booking microservice gRPC contract.
+// Manages hotel reservations (create, cancel, list).
 package booking;
 
 // BookingService manages reservations made by clients.

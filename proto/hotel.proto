@@ -1,5 +1,7 @@
 syntax = "proto3";
 
+// Hotel microservice gRPC contract.
+// Manages hotels, rooms and availability.
 package hotel;
 
 // HotelService manages hotels and rooms.

@@ -1,5 +1,7 @@
 syntax = "proto3";
 
+// Notification microservice gRPC contract.
+// Stores and retrieves user notifications.
 package notification;
 
 // NotificationService stores notifications generated when
