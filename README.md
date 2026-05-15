@@ -25,38 +25,60 @@ for asynchronous events and **SQLite3 + RxDB** for per-service storage.
 - [11. Databases](#11-databases)
 - [12. Installation and run](#12-installation-and-run)
 - [13. Demo scenario](#13-demo-scenario)
-- [14. Team & contribution](#14-team--contribution)
+- [14. Postman collection](#14-postman-collection)
+- [15. Team & contribution](#15-team--contribution)
 
 ---
 
 ## 1. Architecture
 
-The architecture matches the one required by the project spec.
+The architecture matches the one required by the project spec: a client talks REST and GraphQL to the API Gateway, which fans out to three microservices over gRPC, and the services exchange business events through Kafka.
 
-```
-                    ┌─────────────────┐         ┌──────────────────┐
-                    │ Hotel-Service   │ ◀────▶ │ SQLite3 (hotels) │
-                    │  gRPC :50051    │         └──────────────────┘
-                    └────────┬────────┘
-                  gRPC HTTP/2 │       Kafka
-                  (Protobuf)  │     ▲
-┌────────┐  REST  ┌──────────────┐    │  ┌────────────┐
-│ Client │ ◀────▶│  API Gateway │◀───┼──│ Kafka      │
-│  (web) │ GraphQL│  REST + GQL  │    │  │ Broker     │
-└────────┘        └──────┬───────┘    │  └─────┬──────┘
-                  gRPC   │  gRPC      │        │ Kafka
-                         ▼            │        │
-                    ┌─────────────────┐        │
-                    │ Booking-Service │ ───────┘ (producer)
-                    │  gRPC :50052    │ ◀────▶ ┌──────────────────┐
-                    └────────┬────────┘         │ SQLite3 (bookings)│
-                             │                  └──────────────────┘
-                             │ Kafka (consumer)
-                             ▼
-                    ┌─────────────────┐         ┌──────────────────┐
-                    │ Notification-Svc│ ◀────▶ │ RxDB (NoSQL)     │
-                    │  gRPC :50053    │         └──────────────────┘
-                    └─────────────────┘
+```mermaid
+flowchart LR
+    Client[💻 Client<br/>Web UI]
+
+    subgraph Gateway[" "]
+        APIG[🛡️ API Gateway<br/>REST + GraphQL<br/>:4000]
+    end
+
+    subgraph Services[" "]
+        H[🏨 Hotel Service<br/>gRPC :50051]
+        B[📅 Booking Service<br/>gRPC :50052]
+        N[🔔 Notification Service<br/>gRPC :50053]
+    end
+
+    subgraph Storage[" "]
+        DBH[(SQLite3<br/>hotels)]
+        DBB[(SQLite3<br/>bookings)]
+        DBN[(RxDB<br/>notifications)]
+    end
+
+    K{{🟣 Kafka Broker}}
+
+    Client -- "REST + GraphQL<br/>HTTP/1.1 · JSON" --> APIG
+    APIG -- "gRPC HTTP/2<br/>Protobuf" --> H
+    APIG -- "gRPC HTTP/2<br/>Protobuf" --> B
+    APIG -- "gRPC HTTP/2<br/>Protobuf" --> N
+
+    H --- DBH
+    B --- DBB
+    N --- DBN
+
+    B -- "produce<br/>booking.created<br/>booking.cancelled" --> K
+    K -- "consume" --> N
+    K -- "consume" --> H
+
+    classDef gateway fill:#fff3e0,stroke:#fb8c00,stroke-width:2px;
+    classDef service fill:#e3f2fd,stroke:#1976d2,stroke-width:2px;
+    classDef db fill:#fce4ec,stroke:#c2185b,stroke-width:2px;
+    classDef kafka fill:#ede7f6,stroke:#6a1b9a,stroke-width:2px;
+    classDef client fill:#e8f5e9,stroke:#2e7d32,stroke-width:2px;
+    class Client client;
+    class APIG gateway;
+    class H,B,N service;
+    class DBH,DBB,DBN db;
+    class K kafka;
 ```
 
 **Components**
@@ -111,8 +133,12 @@ booking-hotel/
 │   └── notification.proto
 │
 ├── docker/
-│   └── docker-compose.yml      # Kafka (KRaft) + Kafka UI
+│   └── docker-compose.yml      # Kafka-only stack (alternative)
+├── docker-compose.yml          # full stack (gateway + 3 services + Kafka)
+├── api-gateway/Dockerfile
+├── services/*/Dockerfile
 │
+├── postman/                    # Postman collection + environment
 ├── docs/                       # extra documentation
 └── package.json                # npm workspaces root
 ```
@@ -121,20 +147,35 @@ booking-hotel/
 
 ## 4. Use case (UML)
 
-```
-                   ┌─────────────────────────────────┐
-                   │       Hotel Booking System      │
-                   │                                 │
-   ┌────────┐      │  ◯ Search hotels                │
-   │ Client │ ─────┼─▶ ◯ View rooms                  │
-   │ (User) │      │  ◯ Create a booking             │
-   └────────┘      │  ◯ Cancel a booking             │
-                   │  ◯ List my bookings             │
-                   │  ◯ Read notifications           │
-                   │                                 │
-                   │  ◯ Manage hotels (admin)        │ ◀── Admin
-                   │  ◯ Manage rooms   (admin)       │
-                   └─────────────────────────────────┘
+```mermaid
+flowchart LR
+    User((👤 Client<br/>User))
+    Admin((👤 Admin))
+
+    subgraph System["🏨 Hotel Booking System"]
+        UC1([Search hotels])
+        UC2([View rooms])
+        UC3([Create a booking])
+        UC4([Cancel a booking])
+        UC5([List my bookings])
+        UC6([Read notifications])
+        UC7([Manage hotels])
+        UC8([Manage rooms])
+    end
+
+    User --> UC1
+    User --> UC2
+    User --> UC3
+    User --> UC4
+    User --> UC5
+    User --> UC6
+
+    Admin --> UC7
+    Admin --> UC8
+    Admin --> UC1
+
+    classDef uc fill:#e3f2fd,stroke:#1976d2,stroke-width:1.5px;
+    class UC1,UC2,UC3,UC4,UC5,UC6,UC7,UC8 uc;
 ```
 
 ---
@@ -143,62 +184,91 @@ booking-hotel/
 
 End-to-end scenario when a user books a room.
 
-```
-Client      API Gateway     Hotel Svc      Booking Svc      Kafka      Notif Svc
-  │              │              │               │             │             │
-  │  POST /api/bookings        │               │             │             │
-  │─────────────▶│              │               │             │             │
-  │              │  gRPC GetRoom(room_id)       │             │             │
-  │              │─────────────▶│               │             │             │
-  │              │◀─────── price_per_night ─────│             │             │
-  │              │  gRPC CreateBooking(...)     │             │             │
-  │              │──────────────────────────────▶│             │             │
-  │              │                              │  produce    │             │
-  │              │                              │  booking.created          │
-  │              │                              │────────────▶│             │
-  │              │◀──────── Booking ────────────│             │             │
-  │◀──── 200 OK Booking ───────│               │             │             │
-  │                                                            │             │
-  │                                            consume booking.created       │
-  │                                            ───────────────▶│             │
-  │                                                            │   create    │
-  │                                                            │   Notification
-  │                                            ───────────────▶│             │
-  │                                            update room availability      │
-  │                            ◀───────────────│             │             │
+```mermaid
+sequenceDiagram
+    autonumber
+    actor C as Client
+    participant G as API Gateway
+    participant H as Hotel Service
+    participant B as Booking Service
+    participant K as Kafka
+    participant N as Notification Service
+
+    C->>G: POST /api/bookings (room_id, dates, user)
+    G->>H: gRPC GetRoom(room_id)
+    H-->>G: Room { price_per_night, available }
+    G->>B: gRPC CreateBooking(...)
+    B->>B: persist booking in SQLite3
+    B-)K: produce booking.created
+    B-->>G: Booking { id, total_price, status }
+    G-->>C: 200 OK (Booking)
+
+    par Async event consumers
+        K-)N: deliver booking.created
+        N->>N: insert Notification (RxDB)
+    and
+        K-)H: deliver booking.created
+        H->>H: mark room as unavailable
+    end
 ```
 
 ---
 
 ## 6. Class / Domain diagram
 
-```
-┌───────────────────┐       ┌────────────────────┐
-│      Hotel        │ 1   * │        Room        │
-├───────────────────┤───────├────────────────────┤
-│ id : string       │       │ id : string        │
-│ name              │       │ hotel_id           │
-│ city / country    │       │ number / type      │
-│ description       │       │ price_per_night    │
-│ stars : int       │       │ capacity : int     │
-│ created_at        │       │ available : bool   │
-└───────────────────┘       └────────────────────┘
-        ▲                            ▲
-        │                            │
-        │ refers (no FK across DBs)  │
-        │                            │
-┌───────────────────┐       ┌────────────────────┐
-│     Booking       │       │    Notification    │
-├───────────────────┤       ├────────────────────┤
-│ id : string       │       │ id : string        │
-│ user_email/name   │       │ user_email         │
-│ hotel_id          │       │ type               │
-│ room_id           │       │ title / message    │
-│ check_in/out      │       │ related_id (book.) │
-│ nights : int      │       │ read : bool        │
-│ total_price       │       │ created_at         │
-│ status            │       └────────────────────┘
-└───────────────────┘
+```mermaid
+classDiagram
+    direction LR
+
+    class Hotel {
+        +string id
+        +string name
+        +string city
+        +string country
+        +string description
+        +int stars
+        +string created_at
+    }
+
+    class Room {
+        +string id
+        +string hotel_id
+        +string number
+        +string type
+        +float price_per_night
+        +int capacity
+        +bool available
+    }
+
+    class Booking {
+        +string id
+        +string user_email
+        +string user_name
+        +string hotel_id
+        +string room_id
+        +string check_in
+        +string check_out
+        +int nights
+        +float total_price
+        +string status
+        +string created_at
+    }
+
+    class Notification {
+        +string id
+        +string user_email
+        +string type
+        +string title
+        +string message
+        +string related_id
+        +bool read
+        +string created_at
+    }
+
+    Hotel "1" --> "*" Room : has
+    Booking ..> Hotel : refers (no FK across DBs)
+    Booking ..> Room : refers (no FK across DBs)
+    Notification ..> Booking : related_id
 ```
 
 > Each microservice keeps its own database; cross-service IDs are referenced by value (no joins across DBs), as expected in microservice architectures.
@@ -364,12 +434,45 @@ Hotel-service ships with **seed data** (3 hotels, 5 rooms) so the demo is usable
 
 ## 12. Installation and run
 
-### Prerequisites
+You have two ways to run the project: **Docker (recommended)** or **Node.js locally**.
+
+### Option A — Docker Compose (recommended)
+
+Builds and starts everything: Kafka broker, the 3 microservices, the API Gateway and Kafka UI.
+
+```bash
+docker compose up --build
+```
+
+Once the logs settle, open:
+
+| URL | What |
+|-----|------|
+| <http://localhost:4000> | Web client (served by the gateway) |
+| <http://localhost:4000/graphql> | Apollo GraphQL studio |
+| <http://localhost:4000/api/health> | Gateway health check |
+| <http://localhost:8080> | Kafka UI |
+
+To stop everything:
+
+```bash
+docker compose down
+```
+
+To wipe persistent volumes (databases, kafka logs):
+
+```bash
+docker compose down -v
+```
+
+### Option B — Run with Node.js
+
+#### Prerequisites
 
 - **Node.js ≥ 22.5** (required for built-in `node:sqlite`)
-- **Docker** (only if you want Kafka — services degrade gracefully without it)
+- **Docker** (only for Kafka — or skip it; services degrade gracefully)
 
-### 1) Install dependencies
+#### 1) Install dependencies
 
 ```bash
 npm install
@@ -377,14 +480,14 @@ npm install
 
 This uses npm workspaces and installs everything in one go.
 
-### 2) Start Kafka (optional but recommended)
+#### 2) Start Kafka (optional but recommended)
 
 ```bash
 npm run kafka:up
 # Kafka UI -> http://localhost:8080
 ```
 
-### 3) Start the microservices (in 4 separate terminals)
+#### 3) Start the microservices (in 4 separate terminals)
 
 ```bash
 npm run start:hotel          # gRPC :50051
@@ -393,7 +496,7 @@ npm run start:notification   # gRPC :50053
 npm run start:gateway        # http :4000
 ```
 
-### 4) Open the app
+#### 4) Open the app
 
 ```
 http://localhost:4000
@@ -407,6 +510,14 @@ The gateway serves the demo client, REST API and GraphQL endpoint together.
 # Ctrl+C in each terminal
 npm run kafka:down
 ```
+
+### Postman
+
+A complete Postman collection is available in [`postman/`](./postman). Import both
+`Hotel-Booking-Microservices.postman_collection.json` and
+`Hotel-Booking.postman_environment.json`, select the **Hotel Booking - Local**
+environment, and you can exercise every REST endpoint and GraphQL operation
+without writing a single curl command.
 
 ---
 
@@ -430,7 +541,29 @@ npm run kafka:down
 
 ---
 
-## 14. Team & contribution
+## 14. Postman collection
+
+A ready-to-import Postman collection covering every REST and GraphQL endpoint lives in [`postman/`](./postman):
+
+- `Hotel-Booking-Microservices.postman_collection.json`
+- `Hotel-Booking.postman_environment.json`
+
+**How to use:**
+
+1. Open Postman → **Import** → select both JSON files.
+2. Pick the **Hotel Booking - Local** environment in the top-right.
+3. Make sure the stack is running (`docker compose up --build`).
+4. Run the requests from top to bottom — `bookingId` and `notificationId` are
+   automatically captured between requests by test scripts so you do not need
+   to copy-paste IDs.
+
+The collection is organised in 5 folders: **Health**, **Hotels (REST)**,
+**Bookings (REST)**, **Notifications (REST)** and **GraphQL** (queries +
+mutations).
+
+---
+
+## 15. Team & contribution
 
 | Member | Email | GitHub | Focus |
 |--------|-------|--------|-------|
