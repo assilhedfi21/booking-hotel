@@ -1,0 +1,54 @@
+syntax = "proto3";
+
+package booking;
+
+// BookingService manages reservations made by clients.
+// It uses gRPC for synchronous calls from the API Gateway
+// and publishes Kafka events for async communication.
+service BookingService {
+  rpc CreateBooking (CreateBookingRequest) returns (Booking);
+  rpc GetBooking (GetBookingRequest) returns (Booking);
+  rpc ListBookings (ListBookingsRequest) returns (ListBookingsResponse);
+  rpc CancelBooking (CancelBookingRequest) returns (Booking);
+  rpc ListBookingsByUser (ListBookingsByUserRequest) returns (ListBookingsResponse);
+}
+
+message Booking {
+  string id = 1;
+  string user_email = 2;
+  string user_name = 3;
+  string hotel_id = 4;
+  string room_id = 5;
+  string check_in = 6;   // YYYY-MM-DD
+  string check_out = 7;  // YYYY-MM-DD
+  int32 nights = 8;
+  double total_price = 9;
+  string status = 10;    // CONFIRMED | CANCELLED
+  string created_at = 11;
+}
+
+message CreateBookingRequest {
+  string user_email = 1;
+  string user_name = 2;
+  string hotel_id = 3;
+  string room_id = 4;
+  string check_in = 5;
+  string check_out = 6;
+  double price_per_night = 7;
+}
+
+message GetBookingRequest { string id = 1; }
+
+message CancelBookingRequest { string id = 1; }
+
+message ListBookingsRequest {
+  int32 limit = 1;
+  int32 offset = 2;
+}
+
+message ListBookingsByUserRequest { string user_email = 1; }
+
+message ListBookingsResponse {
+  repeated Booking bookings = 1;
+  int32 total = 2;
+}
