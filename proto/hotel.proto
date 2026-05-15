@@ -1,0 +1,93 @@
+syntax = "proto3";
+
+package hotel;
+
+// HotelService manages hotels and rooms.
+// It is consumed by the API Gateway over HTTP/2 + Protobuf.
+service HotelService {
+  rpc CreateHotel (CreateHotelRequest) returns (Hotel);
+  rpc GetHotel (GetHotelRequest) returns (Hotel);
+  rpc ListHotels (ListHotelsRequest) returns (ListHotelsResponse);
+  rpc UpdateHotel (UpdateHotelRequest) returns (Hotel);
+  rpc DeleteHotel (DeleteHotelRequest) returns (DeleteHotelResponse);
+  rpc SearchHotels (SearchHotelsRequest) returns (ListHotelsResponse);
+
+  rpc AddRoom (AddRoomRequest) returns (Room);
+  rpc ListRooms (ListRoomsRequest) returns (ListRoomsResponse);
+  rpc GetRoom (GetRoomRequest) returns (Room);
+  rpc SetRoomAvailability (SetRoomAvailabilityRequest) returns (Room);
+}
+
+message Hotel {
+  string id = 1;
+  string name = 2;
+  string city = 3;
+  string country = 4;
+  string description = 5;
+  int32 stars = 6;
+  string created_at = 7;
+}
+
+message Room {
+  string id = 1;
+  string hotel_id = 2;
+  string number = 3;
+  string type = 4;
+  double price_per_night = 5;
+  int32 capacity = 6;
+  bool available = 7;
+}
+
+message CreateHotelRequest {
+  string name = 1;
+  string city = 2;
+  string country = 3;
+  string description = 4;
+  int32 stars = 5;
+}
+
+message GetHotelRequest { string id = 1; }
+message DeleteHotelRequest { string id = 1; }
+message DeleteHotelResponse { bool success = 1; }
+
+message UpdateHotelRequest {
+  string id = 1;
+  string name = 2;
+  string city = 3;
+  string country = 4;
+  string description = 5;
+  int32 stars = 6;
+}
+
+message ListHotelsRequest {
+  int32 limit = 1;
+  int32 offset = 2;
+}
+
+message ListHotelsResponse {
+  repeated Hotel hotels = 1;
+  int32 total = 2;
+}
+
+message SearchHotelsRequest {
+  string city = 1;
+  int32 min_stars = 2;
+}
+
+message AddRoomRequest {
+  string hotel_id = 1;
+  string number = 2;
+  string type = 3;
+  double price_per_night = 4;
+  int32 capacity = 5;
+}
+
+message GetRoomRequest { string id = 1; }
+
+message ListRoomsRequest { string hotel_id = 1; }
+message ListRoomsResponse { repeated Room rooms = 1; }
+
+message SetRoomAvailabilityRequest {
+  string id = 1;
+  bool available = 2;
+}
