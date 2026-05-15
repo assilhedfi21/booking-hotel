@@ -7,6 +7,8 @@ package booking;
 // BookingService manages reservations made by clients.
 // It uses gRPC for synchronous calls from the API Gateway
 // and publishes Kafka events for async communication.
+// When Kafka is unavailable, it falls back to direct gRPC
+// calls to the notification-service.
 service BookingService {
   rpc CreateBooking (CreateBookingRequest) returns (Booking);
   rpc GetBooking (GetBookingRequest) returns (Booking);
