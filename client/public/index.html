@@ -1,0 +1,105 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Hotel Booking - Microservices Demo</title>
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+  <header>
+    <div class="container">
+      <h1>🏨 Hotel Booking</h1>
+      <p class="subtitle">Microservices demo · REST · GraphQL · gRPC · Kafka</p>
+      <nav>
+        <button data-tab="hotels" class="active">Hotels</button>
+        <button data-tab="bookings">My bookings</button>
+        <button data-tab="notifications">Notifications</button>
+        <button data-tab="graphql">GraphQL playground</button>
+      </nav>
+    </div>
+  </header>
+
+  <main class="container">
+    <!-- HOTELS -->
+    <section id="tab-hotels" class="tab active">
+      <div class="card">
+        <h2>Search hotels</h2>
+        <div class="row">
+          <input id="filter-city" placeholder="City (e.g. Tunis)" />
+          <input id="filter-stars" type="number" min="0" max="5" placeholder="Min stars" />
+          <button id="btn-search">Search</button>
+          <button id="btn-reset" class="ghost">Reset</button>
+        </div>
+      </div>
+
+      <div id="hotels-grid" class="grid"></div>
+    </section>
+
+    <!-- BOOKINGS -->
+    <section id="tab-bookings" class="tab">
+      <div class="card">
+        <h2>My bookings</h2>
+        <div class="row">
+          <input id="user-email" placeholder="your.email@example.com" />
+          <button id="btn-load-bookings">Load my bookings</button>
+        </div>
+      </div>
+      <div id="bookings-list"></div>
+    </section>
+
+    <!-- NOTIFICATIONS -->
+    <section id="tab-notifications" class="tab">
+      <div class="card">
+        <h2>Notifications</h2>
+        <div class="row">
+          <input id="notif-email" placeholder="your.email@example.com" />
+          <button id="btn-load-notifications">Load notifications</button>
+          <button id="btn-load-all-notifications" class="ghost">Load all</button>
+        </div>
+        <p class="hint">Notifications are produced asynchronously via Kafka when a booking is created or cancelled.</p>
+      </div>
+      <div id="notifications-list"></div>
+    </section>
+
+    <!-- GRAPHQL -->
+    <section id="tab-graphql" class="tab">
+      <div class="card">
+        <h2>GraphQL playground</h2>
+        <p class="hint">A real Apollo studio is also available at <code>/graphql</code>.</p>
+        <textarea id="gql-query" rows="10">query {
+  hotels {
+    id
+    name
+    city
+    stars
+    rooms { id number type price_per_night available }
+  }
+}</textarea>
+        <button id="btn-run-gql">Run query</button>
+        <pre id="gql-result"></pre>
+      </div>
+    </section>
+  </main>
+
+  <!-- Booking modal -->
+  <div id="modal" class="modal hidden">
+    <div class="modal-card">
+      <h3>Book this room</h3>
+      <p id="modal-room-info"></p>
+      <label>Email <input id="m-email" placeholder="email" /></label>
+      <label>Name <input id="m-name" placeholder="full name" /></label>
+      <label>Check-in <input id="m-checkin" type="date" /></label>
+      <label>Check-out <input id="m-checkout" type="date" /></label>
+      <div class="row right">
+        <button id="m-cancel" class="ghost">Cancel</button>
+        <button id="m-confirm">Confirm booking</button>
+      </div>
+    </div>
+  </div>
+
+  <div id="toast"></div>
+
+  <script src="app.js"></script>
+</body>
+</html>
