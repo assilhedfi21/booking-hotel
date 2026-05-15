@@ -111,6 +111,7 @@ button.danger { background: #dc2626; }
   align-items: center;
 }
 .notification-card.unread { border-left: 4px solid #4f46e5; }
+.notification-card.cancelled { border-left: 4px solid #dc2626; background: #fef2f2; }
 
 pre {
   background: #1f2937;

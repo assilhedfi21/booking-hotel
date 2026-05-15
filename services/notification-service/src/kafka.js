@@ -1,5 +1,6 @@
 const { Kafka, logLevel } = require("kafkajs");
 const { NotificationRepo } = require("./repository");
+const { getHotelInfo } = require("./hotel-client");
 
 const KAFKA_BROKER = process.env.KAFKA_BROKER || "localhost:9094";
 
@@ -9,6 +10,11 @@ const TOPICS = {
 };
 
 let consumer = null;
+
+function formatDateRange(checkIn, checkOut) {
+  if (!checkIn || !checkOut) return "";
+  return `from ${checkIn} to ${checkOut}`;
+}
 
 async function startKafka() {
   try {
@@ -29,12 +35,21 @@ async function startKafka() {
         try {
           const event = JSON.parse(message.value.toString());
 
+          // Enrich the notification with a friendly hotel name and room
+          // number. This is a synchronous gRPC call to hotel-service.
+          const { hotelName, roomNumber } = await getHotelInfo(
+            event.hotel_id,
+            event.room_id
+          );
+
+          const dateRange = formatDateRange(event.check_in, event.check_out);
+
           if (topic === TOPICS.BOOKING_CREATED) {
             await NotificationRepo.create({
               user_email: event.user_email,
               type: "BOOKING_CONFIRMED",
-              title: "Booking confirmed",
-              message: `Your booking ${event.id} is confirmed for ${event.nights} night(s).`,
+              title: `✅ Booking confirmed at ${hotelName}`,
+              message: `Hi ${event.user_name || "guest"}, your booking at ${hotelName} (room ${roomNumber}) ${dateRange} for ${event.nights} night(s) is confirmed. Total: $${event.total_price}.`,
               related_id: event.id
             });
           }
@@ -43,8 +58,8 @@ async function startKafka() {
             await NotificationRepo.create({
               user_email: event.user_email,
               type: "BOOKING_CANCELLED",
-              title: "Booking cancelled",
-              message: `Your booking ${event.id} has been cancelled.`,
+              title: `❌ Booking cancelled at ${hotelName}`,
+              message: `Hi ${event.user_name || "guest"}, your booking at ${hotelName} (room ${roomNumber}) ${dateRange} has been cancelled. The room is now available again.`,
               related_id: event.id
             });
           }
