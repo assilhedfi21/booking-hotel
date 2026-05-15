@@ -3,7 +3,8 @@ const grpc = require("@grpc/grpc-js");
 const protoLoader = require("@grpc/proto-loader");
 
 const { BookingRepo } = require("./repository");
-const { startKafka, stopKafka, publish, TOPICS } = require("./kafka");
+const { startKafka, stopKafka, publish, TOPICS, isConnected } = require("./kafka");
+const { notifyDirect } = require("./notify-client");
 
 const PROTO_DIR = process.env.PROTO_DIR || path.resolve(__dirname, "..", "..", "..", "proto");
 const PROTO_PATH = path.join(PROTO_DIR, "booking.proto");
@@ -28,7 +29,12 @@ const handlers = {
         }
       }
       const booking = BookingRepo.create(call.request);
-      publish(TOPICS.BOOKING_CREATED, booking).catch(() => {});
+      // Try Kafka first; if unavailable, notify directly via gRPC
+      if (isConnected()) {
+        publish(TOPICS.BOOKING_CREATED, booking).catch(() => {});
+      } else {
+        notifyDirect(booking, "BOOKING_CONFIRMED").catch(() => {});
+      }
       callback(null, booking);
     } catch (err) {
       callback({ code: grpc.status.INTERNAL, message: err.message });
@@ -56,7 +62,11 @@ const handlers = {
     if (!booking) {
       return callback({ code: grpc.status.NOT_FOUND, message: "Booking not found" });
     }
-    publish(TOPICS.BOOKING_CANCELLED, booking).catch(() => {});
+    if (isConnected()) {
+      publish(TOPICS.BOOKING_CANCELLED, booking).catch(() => {});
+    } else {
+      notifyDirect(booking, "BOOKING_CANCELLED").catch(() => {});
+    }
     callback(null, booking);
   }
 };

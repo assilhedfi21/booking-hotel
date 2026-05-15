@@ -49,4 +49,4 @@ async function stopKafka() {
   }
 }
 
-module.exports = { startKafka, stopKafka, publish, TOPICS };
+module.exports = { startKafka, stopKafka, publish, TOPICS, isConnected: () => connected };
