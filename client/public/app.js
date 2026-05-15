@@ -1,5 +1,4 @@
 const API = "/api";
-const GRAPHQL = "/graphql";
 
 // --- helpers ---------------------------------------------------------------
 async function api(path, options = {}) {
@@ -11,15 +10,6 @@ async function api(path, options = {}) {
     const err = await res.json().catch(() => ({ error: res.statusText }));
     throw new Error(err.error || "Request failed");
   }
-  return res.json();
-}
-
-async function gql(query, variables = {}) {
-  const res = await fetch(GRAPHQL, {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ query, variables })
-  });
   return res.json();
 }
 
@@ -83,7 +73,7 @@ function renderHotels(hotels) {
         r.className = "room";
         r.innerHTML = `
           <div>
-            <strong>#${room.number}</strong> · ${room.type}<br />
+            <strong>Room ${room.number}</strong> · ${room.type}<br />
             <small>${room.capacity} pers · $${room.price_per_night}/night</small>
           </div>
           <div>
@@ -128,7 +118,7 @@ function openBookingModal(hotel, room) {
   currentHotel = hotel;
   currentRoom = room;
   document.getElementById("modal-room-info").innerHTML =
-    `<strong>${hotel.name}</strong> · Room #${room.number} · $${room.price_per_night}/night`;
+    `<strong>${hotel.name}</strong> · Room ${room.number} · $${room.price_per_night}/night`;
   document.getElementById("modal").classList.remove("hidden");
 }
 
@@ -155,7 +145,7 @@ document.getElementById("m-confirm").addEventListener("click", async () => {
       method: "POST",
       body: JSON.stringify(payload)
     });
-    toast(`Booking confirmed: ${booking.id} · $${booking.total_price}`);
+    toast(`Booking confirmed at ${booking.hotel_name || currentHotel.name} · $${booking.total_price}`);
     document.getElementById("modal").classList.add("hidden");
     loadHotels();
   } catch (err) {
@@ -179,10 +169,13 @@ document.getElementById("btn-load-bookings").addEventListener("click", async () 
     data.bookings.forEach((b) => {
       const card = document.createElement("div");
       card.className = "booking-card";
+      const hotelName = b.hotel_name || b.hotel_id;
+      const roomNumber = b.room_number || b.room_id;
+      const cityLabel = b.hotel_city ? `, ${b.hotel_city}` : "";
       card.innerHTML = `
         <div>
-          <strong>#${b.id}</strong> · ${b.check_in} → ${b.check_out} (${b.nights} night${b.nights > 1 ? "s" : ""})<br />
-          <small>Hotel ${b.hotel_id} · Room ${b.room_id} · Total $${b.total_price}</small>
+          <strong>${hotelName}${cityLabel}</strong> · Room ${roomNumber}<br />
+          <small>${b.check_in} → ${b.check_out} (${b.nights} night${b.nights > 1 ? "s" : ""}) · Total $${b.total_price}</small>
         </div>
         <div>
           <span class="tag ${b.status === "CONFIRMED" ? "confirmed" : "cancelled"}">${b.status}</span>
@@ -198,7 +191,7 @@ document.getElementById("btn-load-bookings").addEventListener("click", async () 
       btn.addEventListener("click", async () => {
         try {
           await api("/bookings/" + btn.dataset.cancel + "/cancel", { method: "POST" });
-          toast("Booking cancelled");
+          toast("Booking cancelled. A notification was sent.");
           document.getElementById("btn-load-bookings").click();
         } catch (err) {
           toast(err.message, true);
@@ -220,10 +213,13 @@ async function renderNotifications(notifs) {
   }
   notifs.forEach((n) => {
     const card = document.createElement("div");
-    card.className = "notification-card" + (n.read ? "" : " unread");
+    card.className =
+      "notification-card" +
+      (n.read ? "" : " unread") +
+      (n.type === "BOOKING_CANCELLED" ? " cancelled" : "");
     card.innerHTML = `
       <div>
-        <strong>${n.title}</strong> · <small>${n.type}</small><br />
+        <strong>${n.title}</strong><br />
         ${n.message}<br />
         <small>${n.user_email} · ${new Date(n.created_at).toLocaleString()}</small>
       </div>
@@ -264,13 +260,6 @@ document.getElementById("btn-load-all-notifications").addEventListener("click", 
   } catch (err) {
     toast(err.message, true);
   }
-});
-
-// --- graphql tab -----------------------------------------------------------
-document.getElementById("btn-run-gql").addEventListener("click", async () => {
-  const query = document.getElementById("gql-query").value;
-  const result = await gql(query);
-  document.getElementById("gql-result").textContent = JSON.stringify(result, null, 2);
 });
 
 // --- boot ------------------------------------------------------------------
