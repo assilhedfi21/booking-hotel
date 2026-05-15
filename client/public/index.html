@@ -15,7 +15,6 @@
         <button data-tab="hotels" class="active">Hotels</button>
         <button data-tab="bookings">My bookings</button>
         <button data-tab="notifications">Notifications</button>
-        <button data-tab="graphql">GraphQL playground</button>
       </nav>
     </div>
   </header>
@@ -60,25 +59,6 @@
         <p class="hint">Notifications are produced asynchronously via Kafka when a booking is created or cancelled.</p>
       </div>
       <div id="notifications-list"></div>
-    </section>
-
-    <!-- GRAPHQL -->
-    <section id="tab-graphql" class="tab">
-      <div class="card">
-        <h2>GraphQL playground</h2>
-        <p class="hint">A real Apollo studio is also available at <code>/graphql</code>.</p>
-        <textarea id="gql-query" rows="10">query {
-  hotels {
-    id
-    name
-    city
-    stars
-    rooms { id number type price_per_night available }
-  }
-}</textarea>
-        <button id="btn-run-gql">Run query</button>
-        <pre id="gql-result"></pre>
-      </div>
     </section>
   </main>
 
