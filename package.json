@@ -1,0 +1,25 @@
+{
+  "name": "hotel-booking-microservices",
+  "version": "1.0.0",
+  "description": "Hotel booking application based on a microservices architecture (REST, GraphQL, gRPC, Kafka)",
+  "private": true,
+  "workspaces": [
+    "api-gateway",
+    "services/hotel-service",
+    "services/booking-service",
+    "services/notification-service",
+    "client"
+  ],
+  "scripts": {
+    "install:all": "npm install --workspaces --include-workspace-root",
+    "start:gateway": "npm start --workspace=api-gateway",
+    "start:hotel": "npm start --workspace=hotel-service",
+    "start:booking": "npm start --workspace=booking-service",
+    "start:notification": "npm start --workspace=notification-service",
+    "start:client": "npm start --workspace=client",
+    "kafka:up": "docker compose -f docker/docker-compose.yml up -d",
+    "kafka:down": "docker compose -f docker/docker-compose.yml down"
+  },
+  "author": "Assil Hedfi & Meriam Gahbiche",
+  "license": "MIT"
+}

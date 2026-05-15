@@ -1,0 +1,35 @@
+syntax = "proto3";
+
+package notification;
+
+// NotificationService stores notifications generated when
+// Kafka events are received (e.g. booking.created).
+service NotificationService {
+  rpc ListNotifications (ListNotificationsRequest) returns (ListNotificationsResponse);
+  rpc GetNotificationsByUser (GetNotificationsByUserRequest) returns (ListNotificationsResponse);
+  rpc MarkAsRead (MarkAsReadRequest) returns (Notification);
+}
+
+message Notification {
+  string id = 1;
+  string user_email = 2;
+  string type = 3;        // BOOKING_CONFIRMED | BOOKING_CANCELLED
+  string title = 4;
+  string message = 5;
+  string related_id = 6;  // booking id
+  bool read = 7;
+  string created_at = 8;
+}
+
+message ListNotificationsRequest {
+  int32 limit = 1;
+}
+
+message GetNotificationsByUserRequest { string user_email = 1; }
+
+message ListNotificationsResponse {
+  repeated Notification notifications = 1;
+  int32 total = 2;
+}
+
+message MarkAsReadRequest { string id = 1; }

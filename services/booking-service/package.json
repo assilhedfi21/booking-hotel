@@ -1,0 +1,19 @@
+{
+  "name": "booking-service",
+  "version": "1.0.0",
+  "description": "Booking microservice (gRPC + SQLite3 + Kafka producer)",
+  "main": "src/index.js",
+  "scripts": {
+    "start": "node src/index.js",
+    "dev": "node --watch src/index.js"
+  },
+  "engines": {
+    "node": ">=22.5.0"
+  },
+  "dependencies": {
+    "@grpc/grpc-js": "^1.10.10",
+    "@grpc/proto-loader": "^0.7.13",
+    "kafkajs": "^2.2.4",
+    "uuid": "^9.0.1"
+  }
+}

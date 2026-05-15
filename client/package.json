@@ -1,0 +1,11 @@
+{
+  "name": "client",
+  "version": "1.0.0",
+  "description": "Static demo client for the hotel booking microservices",
+  "scripts": {
+    "start": "node server.js"
+  },
+  "dependencies": {
+    "express": "^4.21.0"
+  }
+}
