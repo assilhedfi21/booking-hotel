@@ -48,7 +48,7 @@ services:
   hotel-service:
     build:
       context: .
-      dockerfile: services/hotel-service/Dockerfile
+      target: hotel-service
     container_name: hotel-service
     environment:
       HOTEL_GRPC_PORT: "50051"
@@ -59,12 +59,12 @@ services:
       kafka:
         condition: service_healthy
     volumes:
-      - hotel_data:/app/services/hotel-service/data
+      - hotel_data:/app/data
 
   booking-service:
     build:
       context: .
-      dockerfile: services/booking-service/Dockerfile
+      target: booking-service
     container_name: booking-service
     environment:
       BOOKING_GRPC_PORT: "50052"
@@ -75,12 +75,12 @@ services:
       kafka:
         condition: service_healthy
     volumes:
-      - booking_data:/app/services/booking-service/data
+      - booking_data:/app/data
 
   notification-service:
     build:
       context: .
-      dockerfile: services/notification-service/Dockerfile
+      target: notification-service
     container_name: notification-service
     environment:
       NOTIFICATION_GRPC_PORT: "50053"
@@ -92,12 +92,12 @@ services:
       kafka:
         condition: service_healthy
     volumes:
-      - notification_data:/app/services/notification-service/data
+      - notification_data:/app/data
 
   api-gateway:
     build:
       context: .
-      dockerfile: api-gateway/Dockerfile
+      target: api-gateway
     container_name: api-gateway
     environment:
       GATEWAY_PORT: "4000"
